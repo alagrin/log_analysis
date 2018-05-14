@@ -1,19 +1,10 @@
+#!/usr/bin/env python
+
 import psycopg2
 import time
 
-# Open connection to news database and set cursor
-
-
-db = psycopg2.connect("dbname=news")
-print('Opened Database Successfully')
-
-cur = db.cursor()
-print("Querying database...")
-
-# Grab top viewed articles by title and view number
-
-
 def get_top_articles():
+    """Grab top viewed articles by title and view number"""
     query1 = """
             SELECT
                 articles.title,
@@ -33,8 +24,8 @@ def get_top_articles():
     cur.execute(query1)
     result1 = cur.fetchall()
     print ('\nHere are the top 3 articles of all time: \n')
-    for item in result1:
-        print ("\"{0}\" - {1} views".format(item[0], item[1]))
+    for title, views in result1:
+        print ('{0}" - {1} views'.format(title, views))
 
 # Grab top authors and corresponding number of views
 
@@ -88,12 +79,17 @@ def error_percentage_over_1percent():
                 error_count > 0.01 * status_count;"""
     cur.execute(query3)
     result3 = cur.fetchall()
+    print('\nHere are the days we had errors for over 1% of requests: \n')
     for item in result3:
-        print('\nHere are the days we had errors for over 1% of requests: \n')
-        print ("{0} - {1}% of requests".format(item[0].strftime("%b %d %Y"),
-                round(item[1], 2)))
+        print ("{0:%B %d %Y} - {1:.2f}% of requests".
+        format(item[0], item[1]))
 
 if __name__ == '__main__':
+    db = psycopg2.connect("dbname=news")
+    print('Opened Database Successfully')
+    cur = db.cursor()
+    print("Querying database...")
     get_top_articles()
     get_top_viewed_authors()
     error_percentage_over_1percent()
+    db.close()
