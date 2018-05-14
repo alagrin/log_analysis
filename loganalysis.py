@@ -1,39 +1,99 @@
 import psycopg2
+import time
+
+# Open connection to news database and set cursor
+
 
 db = psycopg2.connect("dbname=news")
+print('Opened Database Successfully')
+
 cur = db.cursor()
+print("Querying database...")
+
+# Grab top viewed articles by title and view number
+
 
 def get_top_articles():
-    query1 = "SELECT articles.title, count(*) FROM articles JOIN log ON log.path ILIKE '%' || articles.slug || '%' GROUP BY articles.title ORDER BY count(*) DESC LIMIT 3;"
+    query1 = """
+            SELECT
+                articles.title,
+                count(*)
+            FROM
+                articles
+            JOIN
+                log
+            ON
+                log.path ILIKE '%' || articles.slug || '%'
+            GROUP BY
+                articles.title
+            ORDER BY
+                count(*)
+                DESC
+                LIMIT 3;"""
     cur.execute(query1)
     result1 = cur.fetchall()
-    
+    print ('\nHere are the top 3 articles of all time: \n')
     for item in result1:
-        print(item)
-get_top_articles()
+        print ("\"{0}\" - {1} views".format(item[0], item[1]))
+
+# Grab top authors and corresponding number of views
+
 
 def get_top_viewed_authors():
-    query2 = "SELECT authors.name, count(*) as views FROM authors JOIN articles ON articles.author = authors.id JOIN log ON log.path ILIKE '%' || articles.slug || '%' GROUP BY authors.name ORDER BY views DESC;"
+    query2 = """
+            SELECT
+                authors.name, count(*) as views
+            FROM
+                authors
+            JOIN
+                articles
+            ON
+                articles.author = authors.id
+            JOIN
+                log
+            ON
+                log.path ILIKE '%' || articles.slug || '%'
+            GROUP BY
+                authors.name
+            ORDER BY
+                views
+            DESC;"""
     cur.execute(query2)
     result2 = cur.fetchall()
-
+    print ('\nThe most popular article authors of all time: \n')
     for item in result2:
-        print (item)
-get_top_viewed_authors()
+        print ("{0} - {1} views".format(item[0], item[1]))
 
-# def error_percentage_below_1percent():
-#     query3 = "select table1.day, 100.0 * error_count/status_count as percent_count" 
-#     " from (select date(time) as day, count(*) as status_count from log group by day) table1," 
-# " (select date(time) as day, count(status) as error_count from log where status = '404 NOT FOUND' group by day) table2"
-# " where table1.day = table2.day and error_count > 0.01 * statuscount;"
-#     cur.execute(query3)
-#     result3 = cur.fetchall()
-#     return result3
-# print(error_percentage_below_1percent)
+# Grab the day where percentage of error statuses is over 1%
 
-# cur.close()
-# db.close()
+
+def error_percentage_over_1percent():
+    query3 = """
+            SELECT
+                table1.day, 100.0 * error_count/status_count AS percent_count
+            FROM
+                (select date(time) AS day, count(*) AS status_count
+            FROM
+                log GROUP BY day) table1,
+            (SELECT
+                date(time) AS day, count(status) AS error_count
+            FROM
+                log
+            WHERE
+                status = '404 NOT FOUND'
+            GROUP BY day) table2
+            WHERE
+                table1.day = table2.day
+            AND
+                error_count > 0.01 * status_count;"""
+    cur.execute(query3)
+    result3 = cur.fetchall()
+    for item in result3:
+        print('\nHere are the days we had errors for over 1% of requests: \n')
+        print ("{0} - {1}% of requests".format(item[0].strftime("%b %d %Y"),
+                round(item[1], 2)))
 
 if __name__ == '__main__':
     get_top_articles()
     get_top_viewed_authors()
+    error_percentage_over_1percent()
