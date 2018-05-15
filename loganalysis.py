@@ -3,18 +3,19 @@
 import psycopg2
 import time
 
+
 def get_top_articles():
-    """Grab top viewed articles by title and view number"""
+    """Shows top viewed articles by title and number of views"""
     query1 = """
             SELECT
                 articles.title,
                 count(*)
             FROM
                 articles
-            JOIN
+            INNER JOIN
                 log
             ON
-                log.path ILIKE '%' || articles.slug || '%'
+                concat('/article/', articles.slug) = log.path
             GROUP BY
                 articles.title
             ORDER BY
@@ -25,12 +26,11 @@ def get_top_articles():
     result1 = cur.fetchall()
     print ('\nHere are the top 3 articles of all time: \n')
     for title, views in result1:
-        print ('{0}" - {1} views'.format(title, views))
-
-# Grab top authors and corresponding number of views
+        print ('"{0}" - {1} views'.format(title, views))
 
 
 def get_top_viewed_authors():
+    """Shows top authors and corresponding number of views"""
     query2 = """
             SELECT
                 authors.name, count(*) as views
@@ -43,7 +43,7 @@ def get_top_viewed_authors():
             JOIN
                 log
             ON
-                log.path ILIKE '%' || articles.slug || '%'
+                concat('/article/', articles.slug) = log.path
             GROUP BY
                 authors.name
             ORDER BY
@@ -55,10 +55,9 @@ def get_top_viewed_authors():
     for item in result2:
         print ("{0} - {1} views".format(item[0], item[1]))
 
-# Grab the day where percentage of error statuses is over 1%
-
 
 def error_percentage_over_1percent():
+    """Shows the day where percentage of error statuses is over 1%"""
     query3 = """
             SELECT
                 table1.day, 100.0 * error_count/status_count AS percent_count
@@ -81,8 +80,10 @@ def error_percentage_over_1percent():
     result3 = cur.fetchall()
     print('\nHere are the days we had errors for over 1% of requests: \n')
     for item in result3:
-        print ("{0:%B %d %Y} - {1:.2f}% of requests".
-        format(item[0], item[1]))
+        print (
+            "{0:%B %d %Y} - {1:.2f}% of requests".
+            format(item[0], item[1])
+            )
 
 if __name__ == '__main__':
     db = psycopg2.connect("dbname=news")
