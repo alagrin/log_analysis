@@ -85,6 +85,7 @@ def error_percentage_over_1percent():
             format(item[0], item[1])
             )
 
+
 if __name__ == '__main__':
     db = psycopg2.connect("dbname=news")
     print('Opened Database Successfully')
